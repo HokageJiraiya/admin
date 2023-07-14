@@ -14,9 +14,10 @@ import AvatarGroup from "@mui/material/AvatarGroup";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import jwtService from "../../auth/services/jwtService";
-
+import { SnackbarProvider, useSnackbar } from "notistack";
+import CircularProgress from "@mui/material/CircularProgress";
 /**
  * Form Validation Schema
  */
@@ -38,29 +39,45 @@ const defaultValues = {
 };
 
 function SignInPage() {
+  const [axn, setAxn] = React.useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  const triggerAlert = (msg, variant) => {
+    // variant could be success, error, warning, info, or default
+    enqueueSnackbar(msg, { variant });
+  };
   const { control, formState, handleSubmit, setError, setValue } = useForm({
     mode: "onChange",
     defaultValues,
     resolver: yupResolver(schema),
   });
-
   const { isValid, dirtyFields, errors } = formState;
 
   useEffect(() => {
-    setValue("email", "admin@test.com", {
+    setValue("email", "", {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setValue("password", "admin", { shouldDirty: true, shouldValidate: true });
+    setValue("password", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   }, [setValue]);
-
   function onSubmit({ email, password }) {
+    setAxn(true);
     jwtService
       .signInWithEmailAndPassword(email, password)
       .then((user) => {
+        triggerAlert("Success..", "success");
+        setAxn(false);
         // No need to do anything, user data will be set at app/auth/AuthContext
       })
+      .then(() => {
+        triggerAlert("Login failed!", "error");
+        setAxn(false);
+      })
       .catch((_errors) => {
+        triggerAlert("Login failed!", "error");
+        setAxn(false);
         _errors.forEach((error) => {
           setError(error.type, {
             type: "manual",
@@ -69,101 +86,105 @@ function SignInPage() {
         });
       });
   }
-
   return (
-    <div className="flex flex-col sm:flex-row items-center md:items-start sm:justify-center md:justify-start flex-1 min-w-0">
-      <Paper className="h-full sm:h-auto md:flex md:items-center md:justify-end w-full sm:w-auto md:h-full md:w-1/2 py-8 px-16 sm:p-48 md:p-64 sm:rounded-2xl md:rounded-none sm:shadow md:shadow-none ltr:border-r-1 rtl:border-l-1">
-        <div className="w-full max-w-320 sm:w-320 mx-auto sm:mx-0">
-          <img className="w-48" src="assets/images/logo/logo.svg" alt="logo" />
+    <SnackbarProvider maxSnack={1}>
+      <div className="flex flex-col sm:flex-row items-center md:items-start sm:justify-center md:justify-start flex-1 min-w-0">
+        <Paper className="h-full sm:h-auto md:flex md:items-center md:justify-end w-full sm:w-auto md:h-full md:w-1/2 py-8 px-16 sm:p-48 md:p-64 sm:rounded-2xl md:rounded-none sm:shadow md:shadow-none ltr:border-r-1 rtl:border-l-1">
+          <div className="w-full max-w-320 sm:w-320 mx-auto sm:mx-0">
+            <img className="w-48" src="/img/salesforce.webp" alt="logo" />
 
-          <Typography className="mt-32 text-4xl font-extrabold tracking-tight leading-tight">
-            Sign in
-          </Typography>
-          <div className="flex items-baseline mt-2 font-medium">
-            <Typography>Don't have an account?</Typography>
+            <Typography className="mt-32 text-4xl font-extrabold tracking-tight leading-tight">
+              Sign in
+            </Typography>
+            <div className="flex items-baseline mt-2 font-medium">
+              {/* <Typography>Don't have an account?</Typography>
             <Link className="ml-4" to="/sign-up">
               Sign up
-            </Link>
-          </div>
+            </Link> */}
+            </div>
 
-          <form
-            name="loginForm"
-            noValidate
-            className="flex flex-col justify-center w-full mt-32"
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  className="mb-24"
-                  label="Email"
-                  autoFocus
-                  type="email"
-                  error={!!errors.email}
-                  helperText={errors?.email?.message}
-                  variant="outlined"
-                  required
-                  fullWidth
-                />
-              )}
-            />
-
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  className="mb-24"
-                  label="Password"
-                  type="password"
-                  error={!!errors.password}
-                  helperText={errors?.password?.message}
-                  variant="outlined"
-                  required
-                  fullWidth
-                />
-              )}
-            />
-
-            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between">
+            <form
+              name="loginForm"
+              noValidate
+              className="flex flex-col justify-center w-full mt-32"
+              onSubmit={handleSubmit(onSubmit)}
+            >
               <Controller
-                name="remember"
+                name="email"
                 control={control}
                 render={({ field }) => (
-                  <FormControl>
-                    <FormControlLabel
-                      label="Remember me"
-                      control={<Checkbox size="small" {...field} />}
-                    />
-                  </FormControl>
+                  <TextField
+                    {...field}
+                    className="mb-24"
+                    label="Email"
+                    autoFocus
+                    type="email"
+                    error={!!errors.email}
+                    helperText={errors?.email?.message}
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
                 )}
               />
 
-              <Link
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    className="mb-24"
+                    label="Password"
+                    type="password"
+                    error={!!errors.password}
+                    helperText={errors?.password?.message}
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                )}
+              />
+
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between">
+                <Controller
+                  name="remember"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl>
+                      <FormControlLabel
+                        label="Remember me"
+                        control={<Checkbox size="small" {...field} />}
+                      />
+                    </FormControl>
+                  )}
+                />
+
+                {/* <Link
                 className="text-md font-medium"
                 to="/pages/auth/forgot-password"
               >
                 Forgot password?
-              </Link>
-            </div>
+              </Link> */}
+              </div>
 
-            <Button
-              variant="contained"
-              color="secondary"
-              className=" w-full mt-16"
-              aria-label="Sign in"
-              disabled={_.isEmpty(dirtyFields) || !isValid}
-              type="submit"
-              size="large"
-            >
-              Sign in
-            </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                className=" w-full mt-16"
+                aria-label="Sign in"
+                disabled={_.isEmpty(dirtyFields) || !isValid || axn}
+                type="submit"
+                size="large"
+              >
+                {axn ? (
+                  <CircularProgress style={{ color: "white" }} />
+                ) : (
+                  "Sign in"
+                )}
+              </Button>
 
-            <div className="flex items-center mt-32">
+              {/* <div className="flex items-center mt-32">
               <div className="flex-auto mt-px border-t" />
               <Typography className="mx-8" color="text.secondary">
                 Or continue with
@@ -187,93 +208,99 @@ function SignInPage() {
                   feather:github
                 </FuseSvgIcon>
               </Button>
-            </div>
-          </form>
-        </div>
-      </Paper>
+            </div> */}
+            </form>
+          </div>
+        </Paper>
 
-      <Box
-        className="relative hidden md:flex flex-auto items-center justify-center h-full p-64 lg:px-112 overflow-hidden"
-        sx={{ backgroundColor: "primary.main" }}
-      >
-        <svg
-          className="absolute inset-0 pointer-events-none"
-          viewBox="0 0 960 540"
-          width="100%"
-          height="100%"
-          preserveAspectRatio="xMidYMax slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <Box
-            component="g"
-            sx={{ color: "primary.light" }}
-            className="opacity-20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="100"
-          >
-            <circle r="234" cx="196" cy="23" />
-            <circle r="234" cx="790" cy="491" />
-          </Box>
-        </svg>
         <Box
-          component="svg"
-          className="absolute -top-64 -right-64 opacity-20"
-          sx={{ color: "primary.light" }}
-          viewBox="0 0 220 192"
-          width="220px"
-          height="192px"
-          fill="none"
+          className="relative hidden md:flex flex-auto items-center justify-center h-full p-64 lg:px-112 overflow-hidden"
+          sx={{ backgroundColor: "primary.main" }}
         >
-          <defs>
-            <pattern
-              id="837c3e70-6c3a-44e6-8854-cc48c737b659"
-              x="0"
-              y="0"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            viewBox="0 0 960 540"
+            width="100%"
+            height="100%"
+            preserveAspectRatio="xMidYMax slice"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <Box
+              component="g"
+              sx={{ color: "primary.light" }}
+              className="opacity-20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="100"
             >
-              <rect x="0" y="0" width="4" height="4" fill="currentColor" />
-            </pattern>
-          </defs>
-          <rect
-            width="220"
-            height="192"
-            fill="url(#837c3e70-6c3a-44e6-8854-cc48c737b659)"
-          />
-        </Box>
+              <circle r="234" cx="196" cy="23" />
+              <circle r="234" cx="790" cy="491" />
+            </Box>
+          </svg>
+          <Box
+            component="svg"
+            className="absolute -top-64 -right-64 opacity-20"
+            sx={{ color: "primary.light" }}
+            viewBox="0 0 220 192"
+            width="220px"
+            height="192px"
+            fill="none"
+          >
+            <defs>
+              <pattern
+                id="837c3e70-6c3a-44e6-8854-cc48c737b659"
+                x="0"
+                y="0"
+                width="20"
+                height="20"
+                patternUnits="userSpaceOnUse"
+              >
+                <rect x="0" y="0" width="4" height="4" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect
+              width="220"
+              height="192"
+              fill="url(#837c3e70-6c3a-44e6-8854-cc48c737b659)"
+            />
+          </Box>
 
-        <div className="z-10 relative w-full max-w-2xl">
-          <div className="text-7xl font-bold leading-none text-gray-100">
-            <div>Welcome to</div>
-            <div>our community</div>
-          </div>
-          <div className="mt-24 text-lg tracking-tight leading-6 text-gray-400">
-            {/* Fuse helps developers to build organized and well coded dashboards full of beautiful and
+          <div className="z-10 relative w-full max-w-2xl">
+            <img
+              className="logo-icon w-32 h-32"
+              src="/img/salesforce.webp"
+              alt="logo"
+            />
+            <div className="text-7xl font-bold leading-none text-gray-100">
+              <div>Salesforce</div>
+            </div>
+            <div className="mt-24 text-lg tracking-tight leading-6 text-gray-400">
+              {/* Fuse helps developers to build organized and well coded dashboards full of beautiful and
             rich modules. Join us and start building your application today. */}
-          </div>
-          <div className="flex items-center mt-32">
-            <AvatarGroup
-              sx={{
-                "& .MuiAvatar-root": {
-                  borderColor: "primary.main",
-                },
-              }}
-            >
-              {/* <Avatar src="assets/images/avatars/female-18.jpg" />
+              <div>Admin Dashboard</div>
+            </div>
+            <div className="flex items-center mt-32">
+              <AvatarGroup
+                sx={{
+                  "& .MuiAvatar-root": {
+                    borderColor: "primary.main",
+                  },
+                }}
+              >
+                {/* <Avatar src="assets/images/avatars/female-18.jpg" />
               <Avatar src="assets/images/avatars/female-11.jpg" />
               <Avatar src="assets/images/avatars/male-09.jpg" />
               <Avatar src="assets/images/avatars/male-16.jpg" /> */}
-            </AvatarGroup>
+              </AvatarGroup>
 
-            <div className="ml-16 font-medium tracking-tight text-gray-400">
-              {/* More than 17k people joined us, it's your turn */}
+              <div className="ml-16 font-medium tracking-tight text-gray-400">
+                {/* More than 17k people joined us, it's your turn */}
+              </div>
             </div>
           </div>
-        </div>
-      </Box>
-    </div>
+        </Box>
+      </div>
+    </SnackbarProvider>
   );
 }
 

@@ -23,7 +23,7 @@ const routes = [
     settingsConfig.defaultAuth
   ),
   {
-    path: "/",
+    path: "*",
     element: <Navigate to="/dashboard" />,
     auth: settingsConfig.defaultAuth,
   },
